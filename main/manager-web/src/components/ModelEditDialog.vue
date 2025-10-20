@@ -224,6 +224,7 @@ export default {
         configJson: {},
       };
       this.fieldJsonMap = {};
+      this.originalValues = {};
     },
     resetProviders() {
       this.providers = [];
@@ -245,6 +246,7 @@ export default {
               if (model.configJson) {
                 Object.keys(model.configJson).forEach((key) => {
                   if (this.isSensitiveField(key) && model.configJson[key]) {
+                    this.$set(this.originalValues, key, model.configJson[key]);
                     const sensitiveName = this.getSensitiveFieldName(key);
                     model.configJson[key] = `你的${sensitiveName}`;
                   }
@@ -265,6 +267,13 @@ export default {
     },
     handleSave() {
       this.saving = true; // 开始保存加载
+
+      // 恢复敏感字段的原始值
+      Object.keys(this.form.configJson).forEach((key) => {
+        if (this.isSensitiveField(key) && this.form.configJson[key] && this.form.configJson[key].includes('*') && this.originalValues[key]) {
+          this.form.configJson[key] = this.originalValues[key];
+        }
+      });
 
       // 处理所有JSON字段
       Object.keys(this.fieldJsonMap).forEach((key) => {
@@ -358,6 +367,14 @@ export default {
         }
       });
 
+      // 处理敏感字段显示
+      Object.keys(configJson).forEach((key) => {
+        if (this.isSensitiveField(key) && configJson[key]) {
+          this.$set(this.originalValues, key, configJson[key]);
+          configJson[key] = this.maskValue(configJson[key]);
+        }
+      });
+
       this.form = {
         id: model.id,
         modelType: model.modelType,
@@ -395,6 +412,11 @@ export default {
         });
         return null;
       }
+    },
+    maskValue(value) {
+      if (!value || typeof value !== 'string') return value;
+      if (value.length <= 8) return '*'.repeat(value.length);
+      return value.substring(0, 4) + '*'.repeat(value.length - 8) + value.substring(value.length - 4);
     },
     formatJson(obj) {
       try {
