@@ -186,3 +186,4 @@ uploadfile
 main/xiaozhi-server/.deps_installed
 .gitignore
 main/manager-api/.compiled
+*.wav
